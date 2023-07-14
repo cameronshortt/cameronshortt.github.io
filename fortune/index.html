@@ -1,0 +1,158 @@
+<style>
+body {
+  margin: 40px auto;
+  max-width: 650px;
+  line-height: 1.6;
+  font-size: 21px;
+  color: #444;
+  padding: 0 10px;
+}
+h1,h2,h3 {
+  line-height: 1.2;
+}
+pre {
+  padding: 10px;
+  border: 2px solid;
+}
+</style>
+<title>Cameron's Blog</title>
+<h1>fortune(6) favors the fast: a novel method of selecting a random element from a list</h1>
+<h2>Abstract</h2>
+<p>A list is defined as a linear collection of data that has a lookup time of
+<code>O(n)</code>.
+The algorithm shown below allows for a random element to be selected from
+a list (represented here as a singly-linked list) in <code>O(n)</code> time without
+knowing the length of the list beforehand.  This algorithm works equally
+as well as other algorithms when the length of the list is known (<code>O(n)</code>),
+but does not require two passes through the data when it is not.  The
+<a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> game pairs well with this algorithm, as this algorithm
+does not require any memory of past lines, save <code>save</code> (see below).</p>
+<h2>Introduction</h2>
+<p><a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> is an old UN*X game that, in its original implementation,
+selected a random line from a file containing one-line fortunes (one per line)
+and printing it to the console, thus acting roughly like a fortune cookie.
+Since <a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> reads lines from a file, the number of lines is not
+known, and storing all of the lines could be prohibitive on the small-memory
+systems it was developed on.  The presented algorithm allows for the random
+selecting of a line in <code>O(n)</code> time without storing every line and without
+knowing the number of lines.</p>
+<p>This method of selecting a random element from a list is only more efficient
+than the na&iuml;ve algorithm if the list has a <code>O(n)</code> lookup
+time, so all of the code will be working on a singly-linked list <code>p</code>,</p>
+<pre><code>struct list
+{
+  char val;
+  struct list *next;
+} *p;
+
+/* abbreviate 'struct list' to 'list' */
+typedef struct list list;
+</code></pre>
+<p>with the initial values of</p>
+<pre><code>0, 1, 2, 3
+</code></pre>
+<p>and an unknown length.  (The na&iuml;ve algorithm has <code>O(1)</code> performance for a list
+with an <code>O(1)</code> lookup time and a known length, as shown below.)</p>
+<pre><code>extern int len,*array;
+
+int index,save;
+
+/* arrays have a lookup time of O(1) */
+index = rand () % len;
+save = array[index];
+</code></pre>
+<p>This operates by just grabbing a random index.</p>
+<pre><code>0 1 2 3
+    ^
+</code></pre>
+<p>Notably, this has <code>O(n)</code> runtime when the length is unknown or the list has
+a lookup time of <code>O(n)</code>, both of which are common constraints, and requires
+that the entire list be traversed twice if both are true.</p>
+<pre><code>extern list *p;
+
+list **head;
+int index,save,len=0;
+
+head=&amp;p;
+
+/* get length of p */
+while (p) {
+  ++len;
+  p=p-&gt;next;
+}
+
+p=&amp;head;
+
+/* look familiar? */
+index = rand () % len;
+
+while (index--)
+  p=p-&gt;next;
+
+save=p-&gt;val;
+</code></pre>
+<p>The following
+algorithm only requires one full traversal even when the length is unknown,
+and only requires the storage of the current list element.</p>
+<pre><code>extern list *p;
+
+int index,save;
+
+for (index=1; p; ++index,p=p-&gt;next)
+  if (rand () % index == 0)
+    save=p-&gt;val;
+</code></pre>
+<h2>Analysis</h2>
+<p>Another way of approaching the problem is to consider shuffling the list, then
+selecting the first element, thus selecting a random element.</p>
+<p>This shifts the runtime to the shuffling algorithm, as selecting the first
+element will be <code>O(1)</code> as long as the list is already on its first element.
+(Note that this holds for any element, and the first is chosen mostly for
+convenience).  A na&iuml;ve shuffling implementation would simply select pairs of
+elements to swap for however many elements there are in the list, but this
+results in a runtime of O(n&sup2;).</p>
+<p>This can be simplified to the canonical Fischer-Yates, or Knuth, Shuffle, which
+runs in <code>O(n)</code> time by moving down the list and swapping a random element with
+the one currently addressed.  The major insight which allows it to be used in
+the context of selecting a random line without keeping track of the entire
+list is that only the first element needs to be checked for a swap, and since
+elements previously addressed will never be swapped again, previous swaps can
+effectively be ignored.</p>
+<pre><code>Example Knuth Shuffle
+
+0 1 2 3    from 0-3, roll 0
+^     ^    swap index 3 and index 0
+
+3 1 2 0    from 0-2, roll 1
+  ^ ^      swap index 2 and index 1
+
+3 2 1 0    from 0-1, roll 0
+^ ^        swap index 0 and index 1
+
+2 3 1 0    finished
+</code></pre>
+<h2>Fortune!</h2>
+<p>With this, <a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> can be more efficiently implemented with this
+algorithm, as <a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> can simply read in an input
+line, see what line it will swap with, and store it if the swapped line is the
+first.</p>
+<p>This works because if a line is swapped with something other than the
+first line, it is irrelevant, and if it swaps with the first line, it becomes
+the first line.  By keeping track of whatever is in the first line via a
+storage variable (<code>save</code>) and checking if any of the lines swap with it via
+the Knuth Shuffle, which is effectively just shuffling the list while ignoring
+everything except the first element, which is equivalent to selecting a random
+line out of a list, this algorithm allows for a significant improvement on the
+na&iuml;ve &quot;get length, get random index, select element at index&quot; method.</p>
+<p>Unfortunately, this algorithm requires the random number
+generator to be called for every element in the list, as opposed to the na&iuml;ve
+algorithm only calling the random number generator once, but since
+computers can almost always perform math faster than read from memory, this
+tends to be a non-issue (including in
+resource-constrained environments, as storing the entire list will likely be
+more impairing in those environments than CPU time.
+This algorithm allows for <a href="https://man.openbsd.org/fortune.6"><em>fortune(6)</em></a> to search through input file
+in <code>O(n)</code> time without storing the content of those files, allowing for simple
+and memory efficient implementations.</p>
+</hr>
+<p>copyleft Cameron Shortt</p>
