@@ -14,8 +14,18 @@ pre {
   padding: 10px;
   border: 2px solid;
 }
+header nav,footer nav {
+  justify-content: space-between;
+}
 </style>
-<title>Cameron's Blog</title>
+<header>
+<h1><a href="/">Cameron Shortt</a></h1>
+<span>I program things</span>
+<nav>
+<a href="/about">About</a> |
+<a href="/resume.pdf">Resume</a>
+</nav>
+</header>
 <h1>fortune(6) favors the fast: a novel method of selecting a random element from a list</h1>
 <h2>Abstract</h2>
 <p>A list is defined as a linear collection of data that has a lookup time of
@@ -155,4 +165,6 @@ This algorithm allows for <a href="https://man.openbsd.org/fortune.6"><em>fortun
 in <code>O(n)</code> time without storing the content of those files, allowing for simple
 and memory efficient implementations.</p>
 <hr/>
+<footer>
 <p>Powered by a super sketchy awk script</p>
+</footer>
