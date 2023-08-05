@@ -1,0 +1,192 @@
+<head>
+<style>
+body {
+  margin: 40px auto;
+  max-width: 650px;
+  line-height: 1.6;
+  font-family: sans-serif;
+  font-size: 21px;
+  color: #ccc;
+  background-color: #111;
+  padding: 0 10px;
+}
+h1,h2,h3 {
+  line-height: 1.2;
+}
+pre {
+  padding: 10px;
+  border: 2px solid;
+}
+a {
+  text-decoration: none;
+  color: #6c6;
+}
+header h1 a {
+  font-size: 160%;
+}
+header h1 {
+  line-height: 0.64em;
+}
+</style>
+</head>
+<body>
+<header>
+<h1>
+<a href="/">Cameron Shortt</a>
+<p>I program things</p>
+</h1>
+<hr/>
+<nav>
+<a href="/">Home</a> |
+<a href="/about">About</a> |
+<a href="https://github.com/cameronshortt">Projects</a> |
+<a href="/resume.pdf">Resume</a>
+</nav>
+<hr/>
+</header>
+<h1>Goto is not Evil</h1>
+<h2>Preface</h2>
+<p>Everything in this article applies to modern,
+high-level languages without control structures
+that obsolesce goto.  If this does not apply, have
+fun with your assembler or Oberon and don't worry
+about the excessive or complete lack of gotos,
+respectively.</p>
+<h2>Abstract</h2>
+<p>Goto is a low-level feature
+that is often misued and has gained a
+reputation for obfuscating otherwise readable code
+and causing difficult bugs.  When used for its
+intended purpose, goto can be a powerful tool, but
+is, at heart, a low-level feature and should be
+treated with the caution that comes with that
+territory.</p>
+<h2>Goto is Everywhere (and Hopefully Nowhere)</h2>
+<p>Goto is effectively an assembler <code>jmp</code>
+instruction, and as such makes up 100% of the
+control structures defining high-level programming
+languages, e.g. an infinite loop.</p>
+<p>In x86 assembler:</p>
+<pre><code>loop:
+  ; do things
+  jmp loop
+</code></pre>
+<p>In C:</p>
+<pre><code>for (;;) {
+  ; do things
+}
+</code></pre>
+<p>However, none of the complaints surrounding goto
+concern its use in assembly: even debatees over
+goto's inclusion in Algol 60 agreed it is
+functional and useful in that area.  The complaints
+mostly address goto being used to create or
+recreate those control structures in a less
+readable way, or threaten a usage in that manner.
+In Dijkstra's famous paper 'Go To Statement
+Considered Harmful', he discusses the difficulty
+of mapping the code of a program to the program's
+behavior at runtime, using a simple indexing
+system.
+He argues that the simplicity of the index directly
+maps to the human programmer's ability to
+understand the code, and while explicit structures
+like simple loops (one index), functions (multiple
+indexes, or even basic recursion (see functions)
+do not severely impact the indexing system, the
+goto statement requires a complete overhaul.
+Using goto in lea of legitimate control structures
+is thus a pretty bad idea, considering it greatly
+reduces readability of the code and creates pain
+for maintainers later, but it is not the only way
+of using goto.</p>
+<h2>Not Evil?</h2>
+<p>There are however uses of goto that merely extend
+existing language constructs, such as subprocedures
+and multi-level breaks, and thus inherit the
+parent-construct's understanding.</p>
+<p>Since subprocedures act like a
+procedure call (with inherited state), they
+function the same index wise as functions, albeit
+with a slightly less readable syntax in C.</p>
+<pre><code>foo (error)
+{
+  if (error)
+    goto fail;
+
+fail:
+  return -1;
+}
+</code></pre>
+<p>For simple procedures with many failure states
+but only one failure code, this model is more
+elegant and aguably more readable than a series
+of cascading if-statements or failure-checking
+temporary variable in _<em>every condition</em>, and a
+literal failure
+procedure cannot be used if the original one must
+return.</p>
+<p>Goto can also cleanly be used for multi-level
+breaks when those are not provided, e.g.</p>
+<pre><code>int i, j;
+
+for (i = 0; i &lt; 100; ++i)
+  for (j = 0; j &lt; 100; ++j)
+    if (i != j)
+      goto end;
+end:
+</code></pre>
+<p>This could also be done structuraly via a state
+variable,</p>
+<pre><code>int i, j, end;
+
+end = 0;
+
+for (i = 0; i &lt; 100 &amp;&amp; !end; ++i)
+  for (j = 0; j &lt; 100 &amp;&amp; !end; ++j)
+    if (i != j)
+      end = 1;
+</code></pre>
+<p>but this somewhat obfuscates the logic of the loop
+with that of the multi-level break.  Note that
+even goto-like statements like break and continue
+are outlawed in pure structured programming as
+defined in the Böhm-Jacopini Theorem, despite their
+common acceptance in otherwise goto-free code.</p>
+<p>As is shown, goto can easily create control flow
+structures like subprocedures and multi-level
+breaks when they are not provided by the language,
+but is also ripe for abuse in recreating existing
+control structures.</p>
+<h2>100% Totally Not Evil</h2>
+<p>When the Java programming language was created, one
+of its design goals was to remove all of the
+low-level features from C++ like direct memory
+access, pointers, and the explicit jump
+instruction.  Except they forgot the explicit jump
+instruction, so goto persists in high-level
+contexts in definitely shouldn't and hasn't in
+other languages designed to be high-level like
+ALGOL W, in <em>1966</em>.  While goto underlies all
+control
+structures and can used to create new ones in
+incredibly specific
+situations, there is absolutely no reason why a new
+control structure would need to be invented in a
+modern high-level language.  But this does not mean
+that goto itself is evil.  Goto is inherently a
+low-level construct used to create higher-level
+ones, like subprocedures or multi-level breaks.
+Goto is only harmful when it is used to recreate
+existing
+constructs.  Like any tool, goto is only useful
+when it is used in the way it was intended, and
+that case does not and should not
+come up often in modern,
+featureful languages.</p>
+<hr/>
+<footer>
+<p>Powered by a <a href="https://github.com/cameronshortt/cpls">
+super sketchy awk script</a></p>
+</footer>
+</body>
